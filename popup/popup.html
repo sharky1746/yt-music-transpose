@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <title>YT Music Transpose</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header>
+    <h1>키 조절</h1>
+    <span id="status" class="status">확인 중...</span>
+  </header>
+
+  <div class="dial">
+    <button id="down" class="step" title="반음 내리기 (Alt+↓)" aria-label="반음 내리기">−</button>
+    <div class="value">
+      <output id="value">0</output>
+      <span id="caption" class="caption">원래 키</span>
+    </div>
+    <button id="up" class="step" title="반음 올리기 (Alt+↑)" aria-label="반음 올리기">+</button>
+  </div>
+
+  <input id="slider" type="range" min="-12" max="12" step="1" value="0" aria-label="반음">
+  <div class="ticks"><span>-12</span><span>-6</span><span>0</span><span>+6</span><span>+12</span></div>
+
+  <button id="reset" class="reset">원래 키로 (0)</button>
+
+  <label class="quality">
+    <span>음질</span>
+    <select id="quality">
+      <option value="high">고음질 (지연 약 85ms)</option>
+      <option value="standard">저지연 (지연 약 43ms)</option>
+    </select>
+  </label>
+
+  <p class="hint">단축키: Alt+↑ / Alt+↓ / Alt+0<br>
+    <a href="#" id="shortcuts">단축키 변경</a></p>
+
+  <script type="module" src="popup.js"></script>
+</body>
+</html>
