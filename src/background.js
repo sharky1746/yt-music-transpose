@@ -1,4 +1,4 @@
-import { getSettings, setSemitones, formatSemitones } from './shared.js';
+import { getSettings, setSemitones, formatSemitones, injectContentScript } from './shared.js';
 
 async function updateBadge(semitones) {
   await chrome.action.setBadgeText({ text: semitones === 0 ? '' : formatSemitones(semitones) });
@@ -21,5 +21,9 @@ async function init() {
   await updateBadge(semitones);
 }
 
-chrome.runtime.onInstalled.addListener(init);
+chrome.runtime.onInstalled.addListener(async () => {
+  await init();
+  const tabs = await chrome.tabs.query({ url: 'https://music.youtube.com/*' });
+  await Promise.all(tabs.map((t) => injectContentScript(t.id).catch(() => {})));
+});
 chrome.runtime.onStartup.addListener(init);

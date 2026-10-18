@@ -17,6 +17,12 @@ export async function getSettings() {
   return chrome.storage.local.get(DEFAULTS);
 }
 
+// Chrome does not run content scripts in tabs that were already open when the
+// extension was installed or updated, so inject it on demand.
+export async function injectContentScript(tabId) {
+  await chrome.scripting.executeScript({ target: { tabId }, files: ['src/content.js'] });
+}
+
 export async function setSemitones(v) {
   const semitones = clampSemitones(v);
   await chrome.storage.local.set({ semitones });

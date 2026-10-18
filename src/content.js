@@ -9,18 +9,32 @@
     standard: { fftSize: 2048, overlap: 8 },
   };
 
+  // This script can be injected again into a tab that already ran it
+  // (extension install/update injects into open tabs). Take over the
+  // previous instance's audio graph instead of building a second one,
+  // because a media element can only be connected to Web Audio once.
+  const prev = globalThis.__ytTranspose;
+  if (prev && typeof prev.teardown === 'function') {
+    try {
+      prev.teardown();
+    } catch (_) {
+      /* previous instance may belong to an unloaded extension context */
+    }
+  }
+
   const state = {
     semitones: 0,
-    quality: 'high',
-    ctx: null,
-    node: null,
-    graphPromise: null,
-    active: false, // true once the key has been changed on this page
-    attached: new WeakSet(),
-    attachedCount: 0,
-    sources: [],
+    quality: (prev && prev.quality) || 'high',
+    ctx: (prev && prev.ctx) || null,
+    node: (prev && prev.node) || null,
+    graphPromise: prev && prev.ctx ? Promise.resolve(prev.ctx) : null,
+    active: Boolean(prev && prev.active), // true once the key has been changed on this page
+    attached: (prev && prev.attached) || new WeakSet(),
+    attachedCount: (prev && prev.attachedCount) || 0,
+    sources: (prev && prev.sources) || [],
     error: null,
     waitingForGesture: false,
+    teardown: null,
   };
   // Lives in the extension's isolated world only (the page cannot see it);
   // handy for inspecting the audio graph from DevTools.
@@ -96,7 +110,8 @@
       state.attachedCount++;
       state.error = null;
     } catch (e) {
-      state.error = `영상 요소 연결 실패: ${e && e.message}`;
+      state.error = '영상 연결 실패: 탭을 새로고침(F5)하세요';
+      console.warn('[YT Music Transpose]', e);
     }
   }
 
@@ -129,13 +144,10 @@
   });
   observer.observe(document, { childList: true, subtree: true });
 
-  document.addEventListener(
-    'play',
-    (e) => {
-      if (state.active && e.target instanceof HTMLMediaElement) attach(e.target);
-    },
-    true
-  );
+  const onPlay = (e) => {
+    if (state.active && e.target instanceof HTMLMediaElement) attach(e.target);
+  };
+  document.addEventListener('play', onPlay, true);
 
   // ---------- settings ----------
 
@@ -155,17 +167,19 @@
   }
 
   chrome.storage.local.get(DEFAULTS).then((s) => {
-    state.quality = QUALITY[s.quality] ? s.quality : 'high';
+    const q = QUALITY[s.quality] ? s.quality : 'high';
+    if (q !== state.quality) applyQuality(q);
     applySemitones(s.semitones, { notify: s.semitones !== 0 });
   });
 
-  chrome.storage.onChanged.addListener((changes, area) => {
+  const onStorage = (changes, area) => {
     if (area !== 'local') return;
     if (changes.quality) applyQuality(changes.quality.newValue);
     if (changes.semitones) applySemitones(changes.semitones.newValue ?? 0, { notify: true });
-  });
+  };
+  chrome.storage.onChanged.addListener(onStorage);
 
-  chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+  const onMessage = (msg, _sender, sendResponse) => {
     if (msg && msg.type === 'status') {
       const ctx = state.ctx;
       const q = QUALITY[state.quality];
@@ -180,7 +194,20 @@
         waitingForGesture: state.waitingForGesture,
       });
     }
-  });
+  };
+  chrome.runtime.onMessage.addListener(onMessage);
+
+  state.teardown = () => {
+    observer.disconnect();
+    document.removeEventListener('play', onPlay, true);
+    if (toastHost) toastHost.remove();
+    try {
+      chrome.storage.onChanged.removeListener(onStorage);
+      chrome.runtime.onMessage.removeListener(onMessage);
+    } catch (_) {
+      /* extension context already gone */
+    }
+  };
 
   // ---------- on-page toast ----------
 

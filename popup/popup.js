@@ -1,4 +1,4 @@
-import { MIN_SEMITONES, MAX_SEMITONES, clampSemitones, getSettings, setSemitones, formatSemitones } from '../src/shared.js';
+import { MIN_SEMITONES, MAX_SEMITONES, clampSemitones, getSettings, setSemitones, formatSemitones, injectContentScript } from '../src/shared.js';
 
 const $ = (id) => document.getElementById(id);
 const valueEl = $('value');
@@ -70,11 +70,20 @@ function setStatus(text, cls) {
 async function refreshStatus() {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (!tab) return setStatus('');
+  const isYtm = (tab.url || '').startsWith('https://music.youtube.com/');
   let s;
   try {
     s = await chrome.tabs.sendMessage(tab.id, { type: 'status' });
   } catch (_) {
-    return setStatus('YouTube Music 탭에서 사용하세요', 'warn');
+    if (!isYtm) return setStatus('YouTube Music 탭에서 사용하세요', 'warn');
+    // Tab was open before the extension was installed: inject now.
+    try {
+      await injectContentScript(tab.id);
+      await new Promise((r) => setTimeout(r, 400));
+      s = await chrome.tabs.sendMessage(tab.id, { type: 'status' });
+    } catch (e) {
+      return setStatus('탭을 새로고침(F5)하세요', 'warn');
+    }
   }
   if (!s) return setStatus('');
   if (s.error) return setStatus(s.error, 'warn');

@@ -16,7 +16,9 @@ YouTube Music(music.youtube.com)에서 재생 중인 곡의 키를 **템포는 �
 4. 이 폴더(`C:\Users\shark\mygit\yt-music-transpose`)를 선택. `manifest.json`이 있는 폴더입니다
 5. 퍼즐 조각 아이콘 → YT Music Transpose 옆 핀 아이콘을 눌러 툴바에 고정해 두면 편합니다
 
-코드를 수정했다면 `chrome://extensions`에서 이 확장의 새로고침(↻) 버튼을 누르고, 열려 있는 YouTube Music 탭도 새로고침해야 반영됩니다.
+설치·업데이트 전에 이미 열려 있던 YouTube Music 탭에도 자동으로 붙습니다(팝업을 열 때도 한 번 더 확인). 그래도 팝업 상단에 "탭을 새로고침(F5)하세요"가 보이면 탭을 새로고침하세요.
+
+코드를 수정했다면 `chrome://extensions`에서 이 확장의 새로고침(↻) 버튼을 누르면 됩니다. 이미 키를 바꿔 둔 탭은 새로고침해야 새 코드로 처리됩니다.
 
 ## 사용법
 
