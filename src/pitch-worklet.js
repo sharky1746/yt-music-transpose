@@ -92,6 +92,7 @@ class PitchShifter {
     const N = fftSize;
     const H = N / overlap;
     const bins = N / 2 + 1;
+    this.overlap = overlap;
     this.N = N;
     this.H = H;
     this.bins = bins;
@@ -346,6 +347,19 @@ if (typeof registerProcessor === 'function') {
       const input = inputs[0];
       const output = outputs[0];
       if (!output || output.length === 0) return true;
+      // Nothing connected (original key, bypassed): stay idle and start
+      // from clean buffers when audio comes back.
+      if (!input || input.length === 0) {
+        for (const ch of output) ch.fill(0);
+        this.idle = true;
+        return true;
+      }
+      if (this.idle) {
+        const ratio = this.shifter.ratio;
+        this.shifter.configure(this.shifter.N, this.shifter.overlap);
+        this.shifter.setRatio(ratio);
+        this.idle = false;
+      }
       const inL = input && input.length > 0 ? input[0] : null;
       const inR = input && input.length > 1 ? input[1] : inL;
       const outL = output[0];

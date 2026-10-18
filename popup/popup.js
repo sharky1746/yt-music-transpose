@@ -15,6 +15,7 @@ function render(v) {
   slider.value = String(v);
   $('down').disabled = v <= MIN_SEMITONES;
   $('up').disabled = v >= MAX_SEMITONES;
+  if (typeof renderKey === 'function') renderKey();
 }
 
 // Values this popup wrote, so their (late) change events don't rewind the
@@ -67,6 +68,8 @@ function setStatus(text, cls) {
   statusEl.className = `status ${cls || ''}`;
 }
 
+let injectTried = false;
+
 async function refreshStatus() {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (!tab) return setStatus('');
@@ -76,6 +79,8 @@ async function refreshStatus() {
     s = await chrome.tabs.sendMessage(tab.id, { type: 'status' });
   } catch (_) {
     if (!isYtm) return setStatus('YouTube Music 탭에서 사용하세요', 'warn');
+    if (injectTried) return setStatus('탭을 새로고침(F5)하세요', 'warn');
+    injectTried = true;
     // Tab was open before the extension was installed: inject now.
     try {
       await injectContentScript(tab.id);
@@ -86,11 +91,34 @@ async function refreshStatus() {
     }
   }
   if (!s) return setStatus('');
+  detectedKey = s.key;
+  analysedSeconds = s.analysedSeconds;
+  renderKey();
   if (s.error) return setStatus(s.error, 'warn');
   if (s.waitingForGesture) return setStatus('페이지를 한 번 클릭하세요', 'warn');
-  if (!s.active) return setStatus('대기 중 (키 변경 시 적용)');
-  if (s.contextState === 'running' && s.attached > 0) return setStatus(`적용 중 · 지연 ${s.latencyMs}ms`, 'ok');
-  return setStatus('재생을 시작하면 적용됩니다', 'warn');
+  if (!s.hooked) return setStatus('재생을 시작하면 연결됩니다');
+  if (s.shifting) return setStatus(`키 변경 적용 중 · 지연 ${s.latencyMs}ms`, 'ok');
+  return setStatus('원래 키로 재생 중', 'ok');
+}
+
+// ---------- original / current key ----------
+
+let detectedKey = null;
+let analysedSeconds = 0;
+
+function renderKey() {
+  const { keyName, relativeKeyName } = globalThis.YTTKeyDetect;
+  const k = detectedKey;
+  if (!k) {
+    for (const id of ['keyOriginal', 'keyCurrent', 'keyOriginalRel', 'keyCurrentRel']) $(id).textContent = id.endsWith('Rel') ? '' : '-';
+    $('keyNote').textContent = analysedSeconds > 0 ? `원키 분석 중... (${analysedSeconds}초)` : '곡을 재생하면 원키를 분석합니다';
+    return;
+  }
+  $('keyOriginal').textContent = k.original;
+  $('keyOriginalRel').textContent = `또는 ${relativeKeyName(k.tonic, k.mode)}`;
+  $('keyCurrent').textContent = keyName(k.tonic + current, k.mode);
+  $('keyCurrentRel').textContent = `또는 ${relativeKeyName(k.tonic + current, k.mode)}`;
+  $('keyNote').textContent = k.confident ? '음원 분석으로 추정한 키' : `추정 중 (${k.seconds}초 분석) · 정확도 낮을 수 있음`;
 }
 
 (async () => {
@@ -99,4 +127,5 @@ async function refreshStatus() {
   render(s.semitones);
   $('quality').value = s.quality;
   refreshStatus();
+  setInterval(refreshStatus, 1000);
 })();

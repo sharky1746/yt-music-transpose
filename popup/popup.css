@@ -105,6 +105,47 @@ output.down { color: var(--down); }
   color: var(--sub);
 }
 
+.keys {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 0 0 4px;
+}
+
+.keys div {
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  text-align: center;
+}
+
+.keys dt {
+  font-size: 11px;
+  color: var(--sub);
+}
+
+.keys dd {
+  margin: 2px 0 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.keys dd.rel {
+  margin: 0;
+  min-height: 14px;
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--sub);
+}
+
+.key-note {
+  margin: 0 0 8px;
+  min-height: 15px;
+  font-size: 11px;
+  color: var(--sub);
+  text-align: center;
+}
+
 input[type="range"] {
   width: 100%;
   margin: 4px 0 0;

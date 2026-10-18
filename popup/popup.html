@@ -20,6 +20,12 @@
     <button id="up" class="step" title="반음 올리기 (Alt+↑)" aria-label="반음 올리기">+</button>
   </div>
 
+  <dl class="keys">
+    <div><dt>원키 (추정)</dt><dd id="keyOriginal">-</dd><dd id="keyOriginalRel" class="rel"></dd></div>
+    <div><dt>현재 키</dt><dd id="keyCurrent">-</dd><dd id="keyCurrentRel" class="rel"></dd></div>
+  </dl>
+  <p id="keyNote" class="key-note"></p>
+
   <input id="slider" type="range" min="-12" max="12" step="1" value="0" aria-label="반음">
   <div class="ticks"><span>-12</span><span>-6</span><span>0</span><span>+6</span><span>+12</span></div>
 
@@ -36,6 +42,7 @@
   <p class="hint">단축키: Alt+↑ / Alt+↓ / Alt+0<br>
     <a href="#" id="shortcuts">단축키 변경</a></p>
 
+  <script src="../src/key-detect.js"></script>
   <script type="module" src="popup.js"></script>
 </body>
 </html>
