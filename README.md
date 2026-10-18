@@ -129,3 +129,7 @@ icons/                 아이콘 (make-icons.ps1로 재생성)
 test/dsp-test.js       DSP 오프라인 테스트
 test/key-test.js       원키 추정 오프라인 테스트 (합성 화음 진행 24조)
 ```
+
+## License
+
+MIT
